@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>news_recomendation</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="17.0.0" />
+    <PackageReference Include="Curiosity.Library" Version="1.0.14044" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.28" />
+  </ItemGroup>
+
+</Project>
