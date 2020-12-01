@@ -56,58 +56,58 @@ namespace news_recomendation
 
             var tasks = new List<Task>();
 
-            //await foreach (var article in MIND.ReadNewsAsync())
-            //{
-            //    Console.WriteLine($"Ingesting article {article.Title}\n\t{article.URL}");
+            await foreach (var article in MIND.ReadNewsAsync())
+            {
+                Console.WriteLine($"Ingesting article {article.Title}\n\t{article.URL}");
 
-            //    tasks.Add(Task.Run(async () =>
-            //    {
-            //        var (html, fullText, date) = await MIND.ReadHtmlAsync(article);
+                tasks.Add(Task.Run(async () =>
+                {
+                    var (html, fullText, date) = await MIND.ReadHtmlAsync(article);
 
-            //        var articleNode = graph.AddOrUpdate(new Article()
-            //        {
-            //            ID = article.ID,
-            //            Abstract = article.Abstract,
-            //            Title = article.Title,
-            //            Url = article.URL,
-            //            Html = html,
-            //            FullText = fullText,
-            //            Timestamp = date ?? DateTimeOffset.UnixEpoch,
-            //        });
+                    var articleNode = graph.AddOrUpdate(new Article()
+                    {
+                        ID = article.ID,
+                        Abstract = article.Abstract,
+                        Title = article.Title,
+                        Url = article.URL,
+                        Html = html,
+                        FullText = fullText,
+                        Timestamp = date ?? DateTimeOffset.UnixEpoch,
+                    });
 
-            //        var categoryNode = graph.AddOrUpdate(new Category() { Name = article.Category });
-            //        var subcategoryNode = graph.AddOrUpdate(new Subcategory() { Name = article.SubCategory });
+                    var categoryNode = graph.AddOrUpdate(new Category() { Name = article.Category });
+                    var subcategoryNode = graph.AddOrUpdate(new Subcategory() { Name = article.SubCategory });
 
-            //        graph.Link(articleNode, categoryNode, Edges.HasCategory, Edges.CategoryOf);
-            //        graph.Link(articleNode, subcategoryNode, Edges.HasSubcategory, Edges.SubcategoryOf);
-            //        graph.Link(categoryNode, subcategoryNode, Edges.HasSubcategory, Edges.SubcategoryOf);
+                    graph.Link(articleNode, categoryNode, Edges.HasCategory, Edges.CategoryOf);
+                    graph.Link(articleNode, subcategoryNode, Edges.HasSubcategory, Edges.SubcategoryOf);
+                    graph.Link(categoryNode, subcategoryNode, Edges.HasSubcategory, Edges.SubcategoryOf);
 
-            //        foreach (var entity in article.TitleEntities.Concat(article.AbstractEntities))
-            //        {
-            //            var entityNode = graph.AddOrUpdate(new Entity()
-            //            {
-            //                WikidataId = entity.WikidataId,
-            //                WikidataType = entity.Type,
-            //                Label = entity.Label
-            //            });
+                    foreach (var entity in article.TitleEntities.Concat(article.AbstractEntities))
+                    {
+                        var entityNode = graph.AddOrUpdate(new Entity()
+                        {
+                            WikidataId = entity.WikidataId,
+                            WikidataType = entity.Type,
+                            Label = entity.Label
+                        });
 
-            //            graph.Link(articleNode, entityNode, Edges.Mentions, Edges.AppearsIn);
+                        graph.Link(articleNode, entityNode, Edges.Mentions, Edges.AppearsIn);
 
-            //            foreach (var surfaceForm in entity.SurfaceForms)
-            //            {
-            //                graph.AddAlias(entityNode, Mosaik.Core.Language.English, surfaceForm, false);
-            //            }
-            //        }
-            //    }));
+                        foreach (var surfaceForm in entity.SurfaceForms)
+                        {
+                            graph.AddAlias(entityNode, Mosaik.Core.Language.English, surfaceForm, false);
+                        }
+                    }
+                }));
 
-            //    if(tasks.Count > 20)
-            //    {
-            //        await Task.WhenAny(tasks);
-            //        tasks.RemoveAll(t => t.IsCanceled);
-            //    }
-            //}
+                if (tasks.Count > 20)
+                {
+                    await Task.WhenAny(tasks);
+                    tasks.RemoveAll(t => t.IsCanceled);
+                }
+            }
 
-            //await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks);
 
 
             int count = 0;
