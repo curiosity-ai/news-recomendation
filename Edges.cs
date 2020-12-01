@@ -2,6 +2,8 @@
 {
     public static class Edges
     {
+        public const string Ignored        = nameof(Ignored);
+        public const string IgnoredBy      = nameof(IgnoredBy);
         public const string Viewed         = nameof(Viewed);
         public const string ViewedBy       = nameof(ViewedBy);
         public const string CategoryOf     = nameof(CategoryOf);

@@ -17,7 +17,6 @@ namespace news_recomendation
         {
             ForceInvariantCultureAndUTF8Output();
 
-
             var (type, server, token) = (args[0], args[1], args[2]);
 
             MIND.IsLarge = type switch
@@ -34,11 +33,14 @@ namespace news_recomendation
                 await graph.CreateNodeSchemaAsync<Article>();
                 await graph.CreateNodeSchemaAsync<User>();
                 await graph.CreateNodeSchemaAsync<Entity>();
+                await graph.CreateNodeSchemaAsync<Category>();
+                await graph.CreateNodeSchemaAsync<Subcategory>();
 
-                await graph.CreateEdgeSchemaAsync(Edges.Viewed, Edges.ViewedBy,
-                                                  Edges.CategoryOf, Edges.HasCategory,
-                                                  Edges.SubcategoryOf, Edges.HasSubcategory,
-                                                  Edges.AppearsIn, Edges.Mentions);
+                await graph.CreateEdgeSchemaAsync(Edges.Viewed,         Edges.ViewedBy,
+                                                  Edges.CategoryOf,     Edges.HasCategory,
+                                                  Edges.SubcategoryOf,  Edges.HasSubcategory,
+                                                  Edges.AppearsIn,      Edges.Mentions,
+                                                  Edges.Ignored,        Edges.IgnoredBy);
 
                 await IngestMIND(graph);
 
@@ -48,48 +50,72 @@ namespace news_recomendation
             Console.WriteLine("Done !");
         }
 
-        private static async Task IngestMIND(Graph graph)
+        static async Task IngestMIND(Graph graph)
         {
-            Console.WriteLine("Reading site map...");
+            Console.WriteLine("Reading MIND...");
 
-            await foreach (var article in MIND.ReadNewsAsync())
-            {
-                Console.WriteLine($"Ingesting article {article.Title}\n\t{article.URL}");
+            var tasks = new List<Task>();
 
-                var (html, fullText, date) = await MIND.ReadHtmlAsync(article);
+            //await foreach (var article in MIND.ReadNewsAsync())
+            //{
+            //    Console.WriteLine($"Ingesting article {article.Title}\n\t{article.URL}");
 
-                var articleNode = graph.AddOrUpdate(new Article()
-                {
-                    ID        = article.ID,
-                    Abstract  = article.Abstract,
-                    Title     = article.Title,
-                    Url       = article.URL,
-                    Html      = html,
-                    FullText  = fullText,
-                    Timestamp = date ?? DateTimeOffset.UnixEpoch,
-                });
+            //    tasks.Add(Task.Run(async () =>
+            //    {
+            //        var (html, fullText, date) = await MIND.ReadHtmlAsync(article);
 
-                foreach(var entity in article.TitleEntities.Concat(article.AbstractEntities))
-                {
-                    var entityNode = graph.AddOrUpdate(new Entity()
-                    {
-                        WikidataId = entity.WikidataId,
-                        WikidataType = entity.Type,
-                        Label = entity.Label
-                    });
+            //        var articleNode = graph.AddOrUpdate(new Article()
+            //        {
+            //            ID = article.ID,
+            //            Abstract = article.Abstract,
+            //            Title = article.Title,
+            //            Url = article.URL,
+            //            Html = html,
+            //            FullText = fullText,
+            //            Timestamp = date ?? DateTimeOffset.UnixEpoch,
+            //        });
 
-                    graph.Link(articleNode, entityNode, Edges.Mentions, Edges.AppearsIn);
+            //        var categoryNode = graph.AddOrUpdate(new Category() { Name = article.Category });
+            //        var subcategoryNode = graph.AddOrUpdate(new Subcategory() { Name = article.SubCategory });
 
-                    foreach(var surfaceForm in entity.SurfaceForms)
-                    {
-                        graph.AddAlias(entityNode, Mosaik.Core.Language.English, surfaceForm, false);
-                    }
-                }
-            }
+            //        graph.Link(articleNode, categoryNode, Edges.HasCategory, Edges.CategoryOf);
+            //        graph.Link(articleNode, subcategoryNode, Edges.HasSubcategory, Edges.SubcategoryOf);
+            //        graph.Link(categoryNode, subcategoryNode, Edges.HasSubcategory, Edges.SubcategoryOf);
+
+            //        foreach (var entity in article.TitleEntities.Concat(article.AbstractEntities))
+            //        {
+            //            var entityNode = graph.AddOrUpdate(new Entity()
+            //            {
+            //                WikidataId = entity.WikidataId,
+            //                WikidataType = entity.Type,
+            //                Label = entity.Label
+            //            });
+
+            //            graph.Link(articleNode, entityNode, Edges.Mentions, Edges.AppearsIn);
+
+            //            foreach (var surfaceForm in entity.SurfaceForms)
+            //            {
+            //                graph.AddAlias(entityNode, Mosaik.Core.Language.English, surfaceForm, false);
+            //            }
+            //        }
+            //    }));
+
+            //    if(tasks.Count > 20)
+            //    {
+            //        await Task.WhenAny(tasks);
+            //        tasks.RemoveAll(t => t.IsCanceled);
+            //    }
+            //}
+
+            //await Task.WhenAll(tasks);
+
+
+            int count = 0;
 
             await foreach (var impression in MIND.ReadImpressionsAsync())
             {
                 var userNode = graph.AddOrUpdate(new User() { ID = impression.UserID });
+
                 foreach (var fromHistory in impression.History)
                 {
                     var articleNode = Node.Key(nameof(Article), fromHistory);
@@ -99,9 +125,24 @@ namespace news_recomendation
                 foreach (var fromImpression in impression.Impressions)
                 {
                     var articleNode = Node.Key(nameof(Article), fromImpression.Substring(0, fromImpression.IndexOf('-') - 1));
-                    graph.Link(userNode, articleNode, Edges.Viewed, Edges.ViewedBy);
+                    if (fromImpression.EndsWith("-1"))
+                    {
+                        graph.Link(userNode, articleNode, Edges.Viewed, Edges.ViewedBy);
+                    }
+                    else
+                    {
+                        graph.Link(userNode, articleNode, Edges.Ignored, Edges.IgnoredBy);
+                    }
+                }
+
+                if(++count % 10_000 == 0)
+                {
+                    Console.WriteLine($"Reading impressions, at {count:n0}");
+                    await graph.CommitPendingAsync(); //Avoid operations accumulating up in memory on the connector side
                 }
             }
+
+            Console.WriteLine("Finished reading MIND...");
         }
 
 

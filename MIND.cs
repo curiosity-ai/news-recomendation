@@ -47,17 +47,17 @@ namespace news_recomendation
                                DownloadDocTypes());
         }
 
-        private static async Task DownloadDocTypes()
-        {
-            await DownloadFileAsync(DocTypeJson, DataFolder);
-            DocTypes = JsonConvert.DeserializeObject<Dictionary<string, string>>(await File.ReadAllTextAsync(Path.Combine(DataFolder, "doc_type.json")));
-        }
-
         static async Task DownloadSmallAsync()
         {
             await Task.WhenAll(DownloadFileAsync(BaseUrl + SmallTraining,   DataFolder),
                                DownloadFileAsync(BaseUrl + SmallValidation, DataFolder),
                                DownloadDocTypes());
+        }
+
+        static async Task DownloadDocTypes()
+        {
+            await DownloadFileAsync(DocTypeJson, DataFolder);
+            DocTypes = JsonConvert.DeserializeObject<Dictionary<string, string>>(await File.ReadAllTextAsync(Path.Combine(DataFolder, "doc_type.json")));
         }
 
         public static async IAsyncEnumerable<Impression> ReadImpressionsAsync()
