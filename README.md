@@ -2,7 +2,7 @@
 
 This repository contains the source code presented in the [Building a news recommendation engine](https://theolivenbaum.medium.com/building-a-news-recommendation-engine-using-curiosity-24c004d9458b) article. It uses [Curiosity's](https://curiosity.ai) AI-powered search and it's [data connector](https://www.nuget.org/packages/Curiosity.Library) library to show how one can easily get started to build a few news recomendation algorithms, using graph embeddings and graph queries, to suggest recommended news.
 
-![Graphs](https://raw.githubusercontent.com/curiosity-ai/news-recomendation/main/media/predictions.gif)
+![Graphs](https://github.com/curiosity-ai/news-recomendation/blob/main/media/predictions.gif?raw=true)
 
 The data used for this demo was made available by Microsoft as part of their [MIND project](https://azure.microsoft.com/en-us/services/open-datasets/catalog/microsoft-news-dataset/) - more information about it can also be found on the [related paper](https://msnews.github.io/assets/doc/ACL2020_MIND.pdf). 
 
